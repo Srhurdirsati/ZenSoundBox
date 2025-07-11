@@ -18,11 +18,3 @@ As a developer who codes 10+ hours daily, I needed:
 | Hosting          | Netlify Edge Functions              | Global low-latency                |
 | CI/CD            | GitHub Actions                      | Auto-deploy on push               |
 
-## 🎚️ Feature Breakdown
-```mermaid
-graph TD
-    A[Sound Cards] --> B[Volume Control]
-    A --> C[Active State Tracking]
-    B --> D[Mixer Panel]
-    C --> E[Player Controls]
-    D --> F[Preset System]
