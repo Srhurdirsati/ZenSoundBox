@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZenSound | Professional Ambient Sound Mixer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --dark: #1b263b;
+            --light: #f8f9fa;
+            --accent: #4cc9f0;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--dark), #2a3a5e);
+            color: var(--light);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            padding-bottom: 100px; /* Add padding to prevent overlap with player */
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+            animation: fadeIn 1s ease-out;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .logo i {
+            font-size: 2.5rem;
+            color: var(--accent);
+        }
+        
+        .logo h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--accent), var(--primary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.4);
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .btn-outline:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .sound-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .sound-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.5s ease-out;
+            animation-fill-mode: backwards;
+        }
+        
+        .sound-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .sound-card.active {
+            border: 1px solid var(--accent);
+            box-shadow: 0 0 20px rgba(76, 201, 240, 0.3);
+        }
+        
+        .sound-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(76, 201, 240, 0.1), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+        }
+        
+        .sound-card:hover::before {
+            transform: translateX(100%);
+        }
+        
+        .sound-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--accent);
+        }
+        
+        .sound-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .sound-desc {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 1.5rem;
+        }
+        
+        .volume-control {
+            width: 100%;
+            margin-top: 1rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            cursor: pointer;
+            z-index: 2; /* Make sure volume control is above card */
+            position: relative;
+        }
+        
+        .sound-card.active .volume-control {
+            opacity: 1;
+        }
+        
+        .player {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(27, 38, 59, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 2rem;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            z-index: 10; /* Lower than mixer but above content */
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .player.active {
+            transform: translateY(0);
+        }
+        
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .player-icon {
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        .player-text h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.2rem;
+        }
+        
+        .player-text p {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        
+        .player-controls {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        
+        .player-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .player-btn:hover {
+            color: var(--accent);
+            transform: scale(1.1);
+        }
+        
+        .player-btn.play-pause {
+            font-size: 2rem;
+        }
+        
+        .mixer {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: rgba(27, 38, 59, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 2rem;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 800px;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+        
+        .mixer.active {
+            transform: translate(-50%, -50%) scale(1);
+        }
+        
+        .mixer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .mixer-header h2 {
+            font-size: 1.8rem;
+            background: linear-gradient(to right, var(--accent), var(--primary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .close-mixer {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .close-mixer:hover {
+            color: var(--accent);
+            transform: rotate(90deg);
+        }
+        
+        .mixer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .mixer-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .mixer-icon {
+            font-size: 1.5rem;
+            color: var(--accent);
+        }
+        
+        .mixer-name {
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.7;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sound-grid {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
+            
+            .player {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+            
+            .player-controls {
+                order: -1;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .sound-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+            
+            .controls {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-wave-square pulse"></i>
+                <h1>ZenSound</h1>
+            </div>
+            <div class="controls">
+                <button class="btn btn-outline" id="stopAll">
+                    <i class="fas fa-stop"></i> Stop All
+                </button>
+                <button class="btn btn-primary" id="openMixer">
+                    <i class="fas fa-sliders-h"></i> Sound Mixer
+                </button>
+            </div>
+        </header>
+        
+        <div class="sound-grid">
+            <!-- Nature Sounds -->
+            <div class="sound-card" data-sound="rain">
+                <i class="fas fa-cloud-rain sound-icon"></i>
+                <h3 class="sound-title">Rainfall</h3>
+                <p class="sound-desc">Gentle rain with distant thunder</p>
+                <input type="range" class="volume-control" min="0" max="1" step="0.01" value="0.5">
+            </div>
+            
+            <div class="sound-card" data-sound="thunder">
+                <i class="fas fa-bolt sound-icon"></i>
+                <h3 class="sound-title">Thunderstorm</h3>
+                <p class="sound-desc">Powerful thunder with heavy rain</p>
+                <input type="range" class="volume-control" min="0" max="1" step="0.01" value="0.5">
+            </div>
+            
+            <div class="sound-card" data-sound="ocean">
+                <i class="fas fa-water sound-icon"></i>
+                <h3 class="sound-title">Ocean Waves</h3>
+                <p class="sound-desc">Calming waves crashing on shore</p>
+                <input type="range" class="volume-control" min="0" max="1" step="0.01" value="0.5">
+            </div>
+            
+            <div class="sound-card" data-sound="forest">
+                <i class="fas fa-tree sound-icon"></i>
+                <h3 class="sound-title">Forest</h3>
+                <p class="sound-desc">Birds singing with light wind</p>
+                <input type="range" class="volume-control" min="0" max="1" step="0.01" value="0.5">
+            </div>
+            
+            <!-- Water Sounds -->
+            <div class="sound-card" data-sound="river">
+                <i class="fas fa-stream sound-icon"></i>
+                <h3 class="sound-title">Mountain River</h3>
+                <p class="sound-desc">Flowing water over rocks</p>
+                <input type="range" class="volume-control" min="0" max="1" step="0.01" value="0.5">
+            </div>
+            
+            <div class="sound-card" data-sound="waterfall">
+                <i class="fas fa-waterfall sound-icon"></i>
+                <h3 class="sound-title">Waterfall</h3>
+                <p class="sound-desc">Powerful cascading water</p>
+                <input type="range" class="volume-control" min="0" max="1" step="0.01" value="0.5">
+            </div>
+            
+            <!-- Ambient Sounds -->
+            <div class="sound-card" data-sound="fire">
+                <i class="fas fa-fire sound-icon"></i>
+                <h3 class="sound-title">Crackling Fire</h3>
+                <p class="sound-desc">Wood burning with embers</p>
+                <input type="range" class="volume-control" min="0" max="1" step="0.01" value="0.5">
+            </div>
+            
+            <div class="sound-card" data-sound="wind">
+                <i class="fas fa-wind sound-icon"></i>
+                <h3 class="sound-title">Wind</h3>
+                <p class="sound-desc">Gentle breeze through trees</p>
+                <input type="range" class="volume-control" min="0" max="1" step="0.01" value="0.5">
+            </div>
+            
+            <!-- White Noise -->
+            <div class="sound-card" data-sound="whitenoise">
+                <i class="fas fa-fan sound-icon"></i>
+                <h3 class="sound-title">White Noise</h3>
+                <p class="sound-desc">Soothing static for focus</p>
+                <input type="range" class="volume-control" min="0" max="1" step="0.01" value="0.5">
+            </div>
+            
+            <div class="sound-card" data-sound="brownnoise">
+                <i class="fas fa-volume-up sound-icon"></i>
+                <h3 class="sound-title">Brown Noise</h3>
+                <p class="sound-desc">Deeper, calming frequencies</p>
+                <input type="range" class="volume-control" min="0" max="1" step="0.01" value="0.5">
+            </div>
+            
+            <!-- Urban Sounds -->
+            <div class="sound-card" data-sound="coffeeshop">
+                <i class="fas fa-coffee sound-icon"></i>
+                <h3 class="sound-title">Coffee Shop</h3>
+                <p class="sound-desc">Soft chatter and espresso machine</p>
+                <input type="range" class="volume-control" min="0" max="1" step="0.01" value="0.5">
+            </div>
+            
+            <div class="sound-card" data-sound="train">
+                <i class="fas fa-train sound-icon"></i>
+                <h3 class="sound-title">Train</h3>
+                <p class="sound-desc">Rhythmic train on tracks</p>
+                <input type="range" class="volume-control" min="0" max="1" step="0.01" value="0.5">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Player -->
+    <div class="player" id="player">
+        <div class="player-info">
+            <i class="fas fa-music player-icon"></i>
+            <div class="player-text">
+                <h3 id="now-playing">No sound playing</h3>
+                <p id="now-playing-desc">Select a sound to begin</p>
+            </div>
+        </div>
+        <div class="player-controls">
+            <button class="player-btn" id="prev-btn">
+                <i class="fas fa-step-backward"></i>
+            </button>
+            <button class="player-btn play-pause" id="play-pause-btn">
+                <i class="fas fa-play"></i>
+            </button>
+            <button class="player-btn" id="next-btn">
+                <i class="fas fa-step-forward"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Mixer Modal -->
+    <div class="overlay" id="overlay"></div>
+    <div class="mixer" id="mixer">
+        <div class="mixer-header">
+            <h2>Sound Mixer</h2>
+            <button class="close-mixer" id="closeMixer">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="mixer-grid">
+            <div class="mixer-item">
+                <i class="fas fa-cloud-rain mixer-icon"></i>
+                <span class="mixer-name">Rain</span>
+                <input type="range" class="mixer-volume" data-sound="rain" min="0" max="1" step="0.01" value="0">
+            </div>
+            <div class="mixer-item">
+                <i class="fas fa-bolt mixer-icon"></i>
+                <span class="mixer-name">Thunder</span>
+                <input type="range" class="mixer-volume" data-sound="thunder" min="0" max="1" step="0.01" value="0">
+            </div>
+            <div class="mixer-item">
+                <i class="fas fa-water mixer-icon"></i>
+                <span class="mixer-name">Ocean</span>
+                <input type="range" class="mixer-volume" data-sound="ocean" min="0" max="1" step="0.01" value="0">
+            </div>
+            <div class="mixer-item">
+                <i class="fas fa-tree mixer-icon"></i>
+                <span class="mixer-name">Forest</span>
+                <input type="range" class="mixer-volume" data-sound="forest" min="0" max="1" step="0.01" value="0">
+            </div>
+            <div class="mixer-item">
+                <i class="fas fa-stream mixer-icon"></i>
+                <span class="mixer-name">River</span>
+                <input type="range" class="mixer-volume" data-sound="river" min="0" max="1" step="0.01" value="0">
+            </div>
+            <div class="mixer-item">
+                <i class="fas fa-waterfall mixer-icon"></i>
+                <span class="mixer-name">Waterfall</span>
+                <input type="range" class="mixer-volume" data-sound="waterfall" min="0" max="1" step="0.01" value="0">
+            </div>
+            <div class="mixer-item">
+                <i class="fas fa-fire mixer-icon"></i>
+                <span class="mixer-name">Fire</span>
+                <input type="range" class="mixer-volume" data-sound="fire" min="0" max="1" step="0.01" value="0">
+            </div>
+            <div class="mixer-item">
+                <i class="fas fa-wind mixer-icon"></i>
+                <span class="mixer-name">Wind</span>
+                <input type="range" class="mixer-volume" data-sound="wind" min="0" max="1" step="0.01" value="0">
+            </div>
+            <div class="mixer-item">
+                <i class="fas fa-fan mixer-icon"></i>
+                <span class="mixer-name">White Noise</span>
+                <input type="range" class="mixer-volume" data-sound="whitenoise" min="0" max="1" step="0.01" value="0">
+            </div>
+            <div class="mixer-item">
+                <i class="fas fa-volume-up mixer-icon"></i>
+                <span class="mixer-name">Brown Noise</span>
+                <input type="range" class="mixer-volume" data-sound="brownnoise" min="0" max="1" step="0.01" value="0">
+            </div>
+            <div class="mixer-item">
+                <i class="fas fa-coffee mixer-icon"></i>
+                <span class="mixer-name">Coffee Shop</span>
+                <input type="range" class="mixer-volume" data-sound="coffeeshop" min="0" max="1" step="0.01" value="0">
+            </div>
+            <div class="mixer-item">
+                <i class="fas fa-train mixer-icon"></i>
+                <span class="mixer-name">Train</span>
+                <input type="range" class="mixer-volume" data-sound="train" min="0" max="1" step="0.01" value="0">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Audio elements
+            const sounds = {
+                rain: new Audio('https://files.catbox.moe/k21t10.mp3'),
+                thunder: new Audio('https://files.catbox.moe/q9she5.mp3'),
+                ocean: new Audio('https://files.catbox.moe/2ukz3l.mp3'),
+                forest: new Audio('https://files.catbox.moe/687ehs.mp3'),
+                river: new Audio('https://files.catbox.moe/6oug0j.mp3'),
+                waterfall: new Audio('https://files.catbox.moe/x88xkp.mp3'),
+                fire: new Audio('https://files.catbox.moe/s24del.mp3'),
+                wind: new Audio('https://files.catbox.moe/6v5h6f.mp3'),
+                whitenoise: new Audio('https://files.catbox.moe/qpjr70.mp3'),
+                brownnoise: new Audio('https://files.catbox.moe/hlifjn.mp3'),
+                coffeeshop: new Audio('https://files.catbox.moe/rnvp48.mp3'),
+                train: new Audio('https://files.catbox.moe/8c6e6z.mp3')
+            };
+            
+            // Set all sounds to loop
+            Object.values(sounds).forEach(sound => {
+                sound.loop = true;
+            });
+            
+            // DOM elements
+            const soundCards = document.querySelectorAll('.sound-card');
+            const player = document.getElementById('player');
+            const nowPlaying = document.getElementById('now-playing');
+            const nowPlayingDesc = document.getElementById('now-playing-desc');
+            const playPauseBtn = document.getElementById('play-pause-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const stopAllBtn = document.getElementById('stopAll');
+            const openMixerBtn = document.getElementById('openMixer');
+            const closeMixerBtn = document.getElementById('closeMixer');
+            const mixer = document.getElementById('mixer');
+            const overlay = document.getElementById('overlay');
+            const mixerVolumes = document.querySelectorAll('.mixer-volume');
+            
+            // State
+            let currentSound = null;
+            let isPlaying = false;
+            const activeSounds = new Set();
+            let isDraggingVolume = false; // Track if we're dragging volume slider
+            
+            // Initialize volume controls
+            soundCards.forEach(card => {
+                const soundName = card.getAttribute('data-sound');
+                const volumeControl = card.querySelector('.volume-control');
+                
+                // Prevent volume control clicks from bubbling to card
+                volumeControl.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                    isDraggingVolume = true;
+                });
+                
+                volumeControl.addEventListener('mouseup', (e) => {
+                    e.stopPropagation();
+                    isDraggingVolume = false;
+                });
+                
+                volumeControl.addEventListener('input', (e) => {
+                    e.stopPropagation();
+                    sounds[soundName].volume = e.target.value;
+                });
+            });
+            
+            // Sound card click handler
+            soundCards.forEach(card => {
+                card.addEventListener('click', function(e) {
+                    // Ignore click if we're dragging the volume slider
+                    if (isDraggingVolume) return;
+                    
+                    const soundName = this.getAttribute('data-sound');
+                    const sound = sounds[soundName];
+                    
+                    if (activeSounds.has(soundName)) {
+                        // Sound is active, toggle it off
+                        sound.pause();
+                        activeSounds.delete(soundName);
+                        this.classList.remove('active');
+                        
+                        // Update player if this was the current sound
+                        if (currentSound === soundName) {
+                            currentSound = null;
+                            updatePlayer();
+                        }
+                    } else {
+                        // Sound is inactive, toggle it on
+                        sound.volume = this.querySelector('.volume-control').value;
+                        sound.play();
+                        activeSounds.add(soundName);
+                        this.classList.add('active');
+                        
+                        // Update current sound
+                        currentSound = soundName;
+                        updatePlayer(soundName);
+                    }
+                    
+                    // Show/hide player
+                    togglePlayer();
+                });
+            });
+            
+            // Player controls
+            playPauseBtn.addEventListener('click', function() {
+                if (activeSounds.size === 0) return;
+                
+                if (isPlaying) {
+                    pauseAllSounds();
+                } else {
+                    playAllSounds();
+                }
+            });
+            
+            prevBtn.addEventListener('click', playPreviousSound);
+            nextBtn.addEventListener('click', playNextSound);
+            
+            // Stop all sounds
+            stopAllBtn.addEventListener('click', function() {
+                pauseAllSounds();
+                resetAllCards();
+                activeSounds.clear();
+                currentSound = null;
+                togglePlayer();
+            });
+            
+            // Mixer controls
+            openMixerBtn.addEventListener('click', function() {
+                mixer.classList.add('active');
+                overlay.classList.add('active');
+            });
+            
+            closeMixerBtn.addEventListener('click', function() {
+                mixer.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+            
+            overlay.addEventListener('click', function() {
+                mixer.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+            
+            // Mixer volume controls
+            mixerVolumes.forEach(control => {
+                const soundName = control.getAttribute('data-sound');
+                
+                control.addEventListener('input', function() {
+                    sounds[soundName].volume = this.value;
+                    
+                    // Update card volume if active
+                    const card = document.querySelector(`.sound-card[data-sound="${soundName}"]`);
+                    if (card) {
+                        card.querySelector('.volume-control').value = this.value;
+                    }
+                    
+                    // Play sound if not already playing
+                    if (this.value > 0 && !activeSounds.has(soundName)) {
+                        sounds[soundName].play();
+                        activeSounds.add(soundName);
+                        
+                        // Activate card if exists
+                        if (card) {
+                            card.classList.add('active');
+                        }
+                        
+                        // Update current sound
+                        currentSound = soundName;
+                        updatePlayer(soundName);
+                        togglePlayer();
+                    } else if (this.value == 0 && activeSounds.has(soundName)) {
+                        sounds[soundName].pause();
+                        activeSounds.delete(soundName);
+                        
+                        // Deactivate card if exists
+                        if (card) {
+                            card.classList.remove('active');
+                        }
+                        
+                        // Update player if this was the current sound
+                        if (currentSound === soundName) {
+                            currentSound = activeSounds.size > 0 ? [...activeSounds][0] : null;
+                            updatePlayer();
+                        }
+                        
+                        togglePlayer();
+                    }
+                });
+            });
+            
+            // Helper functions
+            function updatePlayer(soundName = null) {
+                if (soundName) {
+                    const card = document.querySelector(`.sound-card[data-sound="${soundName}"]`);
+                    if (card) {
+                        nowPlaying.textContent = card.querySelector('.sound-title').textContent;
+                        nowPlayingDesc.textContent = card.querySelector('.sound-desc').textContent;
+                    }
+                } else {
+                    if (activeSounds.size > 0) {
+                        const firstSound = [...activeSounds][0];
+                        const card = document.querySelector(`.sound-card[data-sound="${firstSound}"]`);
+                        if (card) {
+                            nowPlaying.textContent = card.querySelector('.sound-title').textContent;
+                            nowPlayingDesc.textContent = card.querySelector('.sound-desc').textContent;
+                        }
+                    } else {
+                        nowPlaying.textContent = 'No sound playing';
+                        nowPlayingDesc.textContent = 'Select a sound to begin';
+                    }
+                }
+                
+                // Update play/pause button
+                updatePlayPauseButton();
+            }
+            
+            function togglePlayer() {
+                if (activeSounds.size > 0) {
+                    player.classList.add('active');
+                } else {
+                    player.classList.remove('active');
+                }
+            }
+            
+            function playAllSounds() {
+                activeSounds.forEach(soundName => {
+                    sounds[soundName].play();
+                });
+                isPlaying = true;
+                updatePlayPauseButton();
+            }
+            
+            function pauseAllSounds() {
+                Object.values(sounds).forEach(sound => {
+                    sound.pause();
+                });
+                isPlaying = false;
+                updatePlayPauseButton();
+            }
+            
+            function updatePlayPauseButton() {
+                const icon = playPauseBtn.querySelector('i');
+                if (isPlaying) {
+                    icon.classList.remove('fa-play');
+                    icon.classList.add('fa-pause');
+                } else {
+                    icon.classList.remove('fa-pause');
+                    icon.classList.add('fa-play');
+                }
+            }
+            
+            function resetAllCards() {
+                soundCards.forEach(card => {
+                    card.classList.remove('active');
+                });
+            }
+            
+            function playPreviousSound() {
+                if (activeSounds.size === 0) return;
+                
+                const soundsArray = [...activeSounds];
+                const currentIndex = soundsArray.indexOf(currentSound);
+                const prevIndex = (currentIndex - 1 + soundsArray.length) % soundsArray.length;
+                currentSound = soundsArray[prevIndex];
+                updatePlayer(currentSound);
+            }
+            
+            function playNextSound() {
+                if (activeSounds.size === 0) return;
+                
+                const soundsArray = [...activeSounds];
+                const currentIndex = soundsArray.indexOf(currentSound);
+                const nextIndex = (currentIndex + 1) % soundsArray.length;
+                currentSound = soundsArray[nextIndex];
+                updatePlayer(currentSound);
+            }
+            
+            // Initialize mixer volumes
+            mixerVolumes.forEach(control => {
+                const soundName = control.getAttribute('data-sound');
+                control.value = 0;
+            });
+            
+            // Animate sound cards sequentially
+            soundCards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+            });
+        });
+    </script>
+</body>
+</html>
